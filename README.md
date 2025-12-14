@@ -300,15 +300,30 @@ cp results/enhanced_result.jsonl results/result.json
 
 2. **NumPy兼容性错误** (`A module that was compiled using NumPy 1.x cannot be run in NumPy 2.3.5`):
    ```bash
-   # 一键修复NumPy兼容性
+   # 方案1: 一键修复NumPy兼容性（推荐）
    python fix_numpy_compatibility.py
 
-   # 或手动降级NumPy
-   pip uninstall numpy
-   pip install 'numpy<2.0.0'
+   # 方案2: 使用conda创建隔离环境（最佳）
+   python fix_numpy_conda.py
+
+   # 方案3: 手动降级NumPy
+   pip uninstall numpy -y
+   pip install 'numpy==1.24.3' --force-reinstall
 
    # 验证修复
    python -c "import numpy as np; print('NumPy:', np.__version__)"
+   ```
+
+   **Conda环境使用方法**:
+   ```bash
+   # 激活环境
+   conda activate numpy_compat
+
+   # 运行训练
+   python main.py --step all
+
+   # 或使用包装脚本
+   ./run_with_numpy_compat.sh python main.py --step all
    ```
 
 3. **Datasets兼容性错误** (`ImportError: cannot import name 'LargeList'`):

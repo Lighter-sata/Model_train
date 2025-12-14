@@ -52,42 +52,31 @@ def fix_numpy_compatibility():
 
     print("\n📦 NumPy 2.x检测到，开始修复...")
 
-    # 方案1: 降级NumPy到1.x版本
-    print("\n🔄 方案1: 降级NumPy到1.x版本...")
-    success = run_command("pip install 'numpy<2.0.0' --force-reinstall --quiet", "降级NumPy到1.x")
+    # 方案1: 强制降级NumPy到1.x版本
+    print("\n🔄 方案1: 强制降级NumPy到1.x版本...")
+
+    # 先尝试卸载
+    run_command("pip uninstall numpy -y --quiet", "卸载现有NumPy")
+
+    # 然后安装指定版本
+    success = run_command("pip install 'numpy==1.24.3' --force-reinstall --quiet", "安装NumPy 1.24.3")
+
+    # 如果失败，尝试其他版本
+    if not success:
+        print("  尝试其他NumPy 1.x版本...")
+        for version in ["1.24.4", "1.24.2", "1.24.1", "1.24.0"]:
+            success = run_command(f"pip install 'numpy=={version}' --force-reinstall --quiet", f"安装NumPy {version}")
+            if success:
+                break
 
     if success:
         # 验证修复
         print("\n🔍 验证修复...")
-        try:
-            import numpy as np
-            new_version = np.__version__
-            print(f"修复后NumPy版本: {new_version}")
-
-            # 测试相关包
-            try:
-                import pandas as pd
-                print(f"✅ pandas导入成功: {pd.__version__}")
-            except ImportError as e:
-                print(f"⚠️  pandas导入失败: {e}")
-
-            try:
-                import pyarrow as pa
-                print(f"✅ pyarrow导入成功: {pa.__version__}")
-            except ImportError as e:
-                print(f"⚠️  pyarrow导入失败: {e}")
-
-            try:
-                import datasets
-                print(f"✅ datasets导入成功: {datasets.__version__}")
-            except ImportError as e:
-                print(f"⚠️  datasets导入失败: {e}")
-
+        if test_imports():
             print("✅ NumPy兼容性修复完成！")
             return True
-
-        except Exception as e:
-            print(f"❌ 验证失败: {e}")
+        else:
+            print("❌ 验证失败")
             return False
     else:
         print("❌ NumPy降级失败")
@@ -129,25 +118,77 @@ def fix_numpy_compatibility():
 
     # 最终验证
     print("\n🔍 最终验证...")
+    if test_imports():
+        print("✅ 强制降级方案成功！")
+        return True
+    else:
+        print("❌ 所有修复方案都失败")
+
+    # 方案4: 创建兼容性补丁（最后的尝试）
+    print("\n🔄 方案4: 创建兼容性补丁...")
+    try:
+        apply_numpy_patch()
+        print("✅ 兼容性补丁已应用")
+
+        # 再次验证
+        final_success = test_imports()
+        if final_success:
+            print("✅ 补丁方案成功！")
+            return True
+
+    except Exception as e:
+        print(f"❌ 补丁方案也失败: {e}")
+
+    print("\n💡 手动解决建议:")
+    print("1. 完全重置环境: pip uninstall numpy pandas pyarrow datasets -y")
+    print("2. 重新安装: pip install 'numpy==1.24.3' pandas pyarrow datasets --force-reinstall")
+    print("3. 或联系平台管理员升级包版本")
+    print("4. 尝试使用conda: conda install numpy=1.24 pandas pyarrow datasets")
+    return False
+
+def apply_numpy_patch():
+    """应用NumPy兼容性补丁"""
+    try:
+        import numpy as np
+
+        # 尝试修复已知的问题
+        # 这里可以添加更多的补丁逻辑
+
+        # 强制重新加载相关模块
+        import sys
+        modules_to_reload = ['pandas', 'pyarrow', 'datasets']
+
+        for module in modules_to_reload:
+            if module in sys.modules:
+                try:
+                    del sys.modules[module]
+                    print(f"  已清除 {module} 缓存")
+                except:
+                    pass
+
+        print("✅ NumPy兼容性补丁已应用")
+        return True
+
+    except Exception as e:
+        print(f"❌ 应用补丁失败: {e}")
+        return False
+
+def test_imports():
+    """测试关键导入"""
     try:
         import numpy as np
         import pandas as pd
         import pyarrow as pa
         import datasets
 
-        print("✅ 强制降级方案成功！")
-        print(f"  NumPy: {np.__version__}")
-        print(f"  Pandas: {pd.__version__}")
-        print(f"  PyArrow: {pa.__version__}")
-        print(f"  Datasets: {datasets.__version__}")
-        return True
+        print("  NumPy版本:", np.__version__)
+        print("  Pandas版本:", pd.__version__)
+        print("  PyArrow版本:", pa.__version__)
+        print("  Datasets版本:", datasets.__version__)
 
+        return True
     except ImportError as e:
-        print(f"❌ 所有修复方案都失败: {e}")
-        print("\n💡 手动解决建议:")
-        print("1. 完全重置环境: pip uninstall numpy pandas pyarrow datasets")
-        print("2. 重新安装: pip install 'numpy<2' pandas pyarrow datasets")
-        print("3. 或联系平台管理员升级包版本")
+        print(f"  导入测试失败: {e}")
         return False
 
 def main():
