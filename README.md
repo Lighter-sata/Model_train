@@ -264,6 +264,9 @@ cp results/enhanced_result.jsonl results/result.json
    ```bash
    # 设置环境变量后运行
    PYTHONPATH=site_packages python fix_pyarrow_manual.py
+
+   # 测试补丁效果
+   python test_pyarrow_patch.py
    ```
 
 2. **数据集下载失败**：
