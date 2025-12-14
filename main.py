@@ -10,6 +10,29 @@ import argparse
 import subprocess
 from pathlib import Path
 
+# 在导入可能依赖datasets的库之前，先修复datasets兼容性问题
+def fix_datasets_import():
+    """修复datasets导入问题"""
+    try:
+        import datasets
+        if not hasattr(datasets, 'LargeList'):
+            # 尝试从features导入
+            try:
+                from datasets.features import Sequence
+                datasets.LargeList = Sequence
+                print("🔧 已自动修复datasets LargeList导入问题")
+            except ImportError:
+                # 创建基础兼容类
+                class LargeList:
+                    pass
+                datasets.LargeList = LargeList
+                print("🔧 已创建datasets LargeList兼容类")
+    except ImportError:
+        pass
+
+# 运行修复
+fix_datasets_import()
+
 def show_recovery_options(failed_step):
     """显示错误恢复选项"""
     print("\n" + "="*60)
