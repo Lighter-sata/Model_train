@@ -4,13 +4,92 @@
 使用更大的模型和优化的超参数
 """
 
+# ===========================================
+# 紧急修复：datasets兼容性问题
+# 在任何导入之前执行
+# ===========================================
+
+print("🔧 [train] 开始紧急修复datasets兼容性...")
+
+try:
+    # 1. 修复pyarrow问题
+    import pyarrow as pa
+    print("🔧 [train] pyarrow修复完成")
+
+    if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+        pa.PyExtensionType = pa.ExtensionType
+        print("🔧 [train] 已修复pyarrow.PyExtensionType")
+
+    # 2. 修复datasets LargeList问题
+    import datasets
+    print("🔧 [train] datasets修复开始")
+
+    if not hasattr(datasets, 'LargeList'):
+        try:
+            from datasets.features import Sequence
+            datasets.LargeList = Sequence
+            print("🔧 [train] 已修复datasets LargeList (使用Sequence)")
+        except ImportError:
+            class LargeList:
+                def __init__(self, dtype, length=None):
+                    self.dtype = dtype
+                    self.length = length
+            datasets.LargeList = LargeList
+            print("🔧 [train] 已创建datasets LargeList兼容类")
+
+    # 3. 修复_FEATURE_TYPES
+    from datasets.features import features
+    if not hasattr(features, '_FEATURE_TYPES'):
+        _FEATURE_TYPES = {}
+        for attr_name in dir(features):
+            attr = getattr(features, attr_name)
+            if (hasattr(attr, '__name__') and
+                hasattr(attr, '__module__') and
+                attr.__module__ == 'datasets.features.features' and
+                (attr_name.endswith('Type') or 'Array' in attr_name or 'Value' in attr_name or 'Class' in attr_name)):
+                _FEATURE_TYPES[attr_name] = attr
+
+        if hasattr(features, 'Sequence'):
+            _FEATURE_TYPES['LargeList'] = features.Sequence
+
+        features._FEATURE_TYPES = _FEATURE_TYPES
+        print(f"🔧 [train] 已创建_FEATURE_TYPES ({len(_FEATURE_TYPES)}个类型)")
+
+    print("🔧 [train] 所有兼容性修复完成")
+
+except Exception as e:
+    print(f"🔧 [train] 修复失败: {e}")
+
+print("🔧 [train] 开始正常导入...\n")
+
+# ===========================================
+# 正常导入开始
+# ===========================================
+
 import os
 from typing import Dict, Any
 
 # 设置GPU
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-# 直接导入 - Swift官方推荐方式
+# ===========================================
+# 验证修复效果
+# ===========================================
+
+print("🔍 验证修复效果...")
+try:
+    # 测试datasets是否正常
+    import datasets
+    assert hasattr(datasets, 'LargeList'), "LargeList不存在"
+    from datasets.features import features
+    assert hasattr(features, '_FEATURE_TYPES'), "_FEATURE_TYPES不存在"
+    print("✅ datasets兼容性修复验证通过")
+except Exception as e:
+    print(f"❌ datasets修复验证失败: {e}")
+    exit(1)
+
+# 现在安全地导入Swift
+print("🔧 导入Swift...")
 from swift.llm import (
     TrainArguments, sft_main, register_dataset, DatasetMeta, ResponsePreprocessor, SubsetDataset
 )
