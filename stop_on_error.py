@@ -56,7 +56,9 @@ def monitor_training(command, log_file="logs/train.log"):
                     error_keywords = [
                         'Error', 'Exception', 'Traceback', 'FAILED', '❌',
                         'ImportError', 'ModuleNotFoundError', 'AttributeError',
-                        'SyntaxError', 'RuntimeError', 'OSError'
+                        'SyntaxError', 'RuntimeError', 'OSError',
+                        'NumPy', 'numpy', 'compiled using NumPy 1.x',
+                        '_ARRAY_API not found', 'cannot be run in NumPy'
                     ]
 
                     if any(keyword.lower() in output.lower() for keyword in error_keywords):
@@ -104,11 +106,12 @@ def show_training_error(command, return_code, error_lines, log_file):
     print("查看命令: tail -f " + log_file)
 
     print("\n🔧 常见解决方法:")
-    print("1. 检查依赖安装: python test_setup.py")
-    print("2. 修复PyArrow问题: python fix_pyarrow_manual.py")
-    print("3. 修复datasets兼容性: python fix_datasets_compatibility.py")
-    print("4. 检查GPU内存: nvidia-smi")
-    print("5. 查看系统资源: htop 或 top")
+    print("1. NumPy兼容性问题: python fix_numpy_compatibility.py")
+    print("2. 检查依赖安装: python test_setup.py")
+    print("3. 修复PyArrow问题: python fix_pyarrow_manual.py")
+    print("4. 修复datasets兼容性: python fix_datasets_compatibility.py")
+    print("5. 检查GPU内存: nvidia-smi")
+    print("6. 查看系统资源: htop 或 top")
 
     print("\n💡 快速修复命令:")
     print("# 检查Python环境")

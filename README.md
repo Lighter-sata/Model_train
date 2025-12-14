@@ -298,7 +298,20 @@ cp results/enhanced_result.jsonl results/result.json
    python test_pyarrow_patch.py
    ```
 
-2. **Datasets兼容性错误** (`ImportError: cannot import name 'LargeList'`):
+2. **NumPy兼容性错误** (`A module that was compiled using NumPy 1.x cannot be run in NumPy 2.3.5`):
+   ```bash
+   # 一键修复NumPy兼容性
+   python fix_numpy_compatibility.py
+
+   # 或手动降级NumPy
+   pip uninstall numpy
+   pip install 'numpy<2.0.0'
+
+   # 验证修复
+   python -c "import numpy as np; print('NumPy:', np.__version__)"
+   ```
+
+3. **Datasets兼容性错误** (`ImportError: cannot import name 'LargeList'`):
    ```bash
    # 一键修复datasets兼容性
    python fix_datasets_compatibility.py

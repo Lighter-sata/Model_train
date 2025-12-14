@@ -136,7 +136,16 @@ def install_dependencies():
         print("\n🔧 尝试强制重新安装...")
         try:
             if platform_name == 'modelscope':
-                # 首先尝试datasets兼容性修复
+                # 首先修复NumPy兼容性问题
+                print("  运行NumPy兼容性修复...")
+                try:
+                    result = subprocess.run([sys.executable, 'fix_numpy_compatibility.py'],
+                                          capture_output=True, text=True, check=True, env=env)
+                    print("✅ NumPy兼容性修复成功")
+                except subprocess.CalledProcessError:
+                    print("⚠️  NumPy兼容性修复失败，继续其他方法...")
+
+                # 然后尝试datasets兼容性修复
                 print("  运行datasets兼容性修复...")
                 try:
                     result = subprocess.run([sys.executable, 'fix_datasets_compatibility.py'],
