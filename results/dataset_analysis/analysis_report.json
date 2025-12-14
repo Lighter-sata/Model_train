@@ -1,0 +1,68 @@
+{
+  "dataset_info": {
+    "train_size": 32000,
+    "test_size": 3000,
+    "features": [
+      "text1",
+      "text2",
+      "label"
+    ]
+  },
+  "class_distribution": {
+    "train": {
+      "0": 22106,
+      "1": 9894
+    },
+    "test": {}
+  },
+  "text_stats": {
+    "train_text1_avg_len": 13.3705,
+    "train_text2_avg_len": 13.35778125
+  },
+  "vocabulary": {
+    "total_words": 7828,
+    "unique_words": 1129,
+    "top_words": [
+      [
+        "怎么",
+        339
+      ],
+      [
+        "还款",
+        319
+      ],
+      [
+        "可以",
+        310
+      ],
+      [
+        "蚂蚁",
+        276
+      ],
+      [
+        "为什么",
+        237
+      ],
+      [
+        "额度",
+        215
+      ],
+      [
+        "开通",
+        178
+      ],
+      [
+        "分期",
+        166
+      ],
+      [
+        "什么",
+        113
+      ],
+      [
+        "使用",
+        113
+      ]
+    ]
+  }
+}

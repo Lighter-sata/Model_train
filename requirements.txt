@@ -1,0 +1,26 @@
+# 核心依赖 - 版本兼容性修复
+torch>=2.0.0
+transformers<4.58
+ms-swift<3.10
+modelscope>=1.30.0
+datasets==2.14.0  # 固定版本以确保兼容性
+
+# 数据处理和分析
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+jieba
+tqdm
+
+# 可视化和词云
+wordcloud
+plotly
+
+# 网络请求
+requests
+
+# 开发依赖（可选）
+# jupyter
+# ipython

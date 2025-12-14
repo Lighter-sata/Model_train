@@ -1,0 +1,2 @@
+❌ 缺少依赖: ['transformers', 'modelscope', 'swift']
+请运行: pip install transformers modelscope ms-swift
