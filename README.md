@@ -246,18 +246,30 @@ cp results/enhanced_result.jsonl results/result.json
 
 ### 常见问题
 
-1. **数据集下载失败**：
+1. **PyArrow兼容性错误** (`AttributeError: module 'pyarrow' has no attribute 'PyExtensionType'`)：
+   ```bash
+   # 自动修复（推荐）
+   python quick_pyarrow_fix.py
+
+   # 或手动修复
+   pip install 'pyarrow>=8.0.0,<12.0.0' 'datasets==2.14.0'
+
+   # 验证修复
+   python -c "import datasets; print('成功')"
+   ```
+
+2. **数据集下载失败**：
    ```bash
    # 使用备用数据下载
    python scripts/data_processor.py download
    ```
 
-2. **GPU内存不足**：
+3. **GPU内存不足**：
    - 减小 `per_device_train_batch_size` (配置文件中)
    - 增加 `gradient_accumulation_steps`
    - 或使用CPU训练（很慢）
 
-3. **依赖版本冲突**：
+4. **依赖版本冲突**：
    ```bash
    # 升级关键依赖
    pip install --upgrade torch transformers

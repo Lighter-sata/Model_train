@@ -38,29 +38,61 @@ def fix_modelscope_dependencies():
     try:
         import pyarrow
         print(f"  pyarrow: {pyarrow.__version__}")
+        # 检查PyExtensionType是否存在
+        if hasattr(pyarrow, 'PyExtensionType'):
+            print("  pyarrow PyExtensionType: ✅ 可用")
+        else:
+            print("  pyarrow PyExtensionType: ❌ 不可用 (版本兼容性问题)")
     except ImportError:
         print("  pyarrow: 未安装")
 
-    # 方案1: 降级datasets到兼容版本
-    print("\n🔧 方案1: 修复datasets版本...")
-    success = run_command("pip install 'datasets==2.14.0' --force-reinstall --quiet", "降级datasets到2.14.0")
+    # 方案1: 安装兼容版本的pyarrow
+    print("\n🔧 方案1: 安装兼容版本的pyarrow...")
+    success = run_command("pip install 'pyarrow>=11.0.0,<15.0.0' --force-reinstall --quiet", "安装兼容版本的pyarrow")
 
+    # 方案2: 重新安装datasets
+    if success:
+        print("\n🔧 方案2: 重新安装datasets...")
+        success = run_command("pip install 'datasets==2.14.0' --force-reinstall --quiet", "重新安装datasets 2.14.0")
+
+    # 方案3: 如果仍有问题，尝试降级pyarrow到更旧版本
     if not success:
-        # 方案2: 升级pyarrow
-        print("\n🔧 方案2: 升级pyarrow...")
-        run_command("pip install --upgrade pyarrow --quiet", "升级pyarrow")
+        print("\n🔧 方案3: 尝试降级pyarrow...")
+        run_command("pip install 'pyarrow>=8.0.0,<12.0.0' --force-reinstall --quiet", "降级pyarrow到兼容版本")
 
-        # 重新尝试安装datasets
         print("\n🔧 重新安装datasets...")
-        run_command("pip install 'datasets>=2.14.0,<3.0.0' --quiet", "安装兼容版本的datasets")
+        run_command("pip install 'datasets==2.14.0' --force-reinstall --quiet", "重新安装datasets")
 
-    # 方案3: 清理并重新安装
-    print("\n🔧 方案3: 清理并重新安装...")
+    # 方案4: 最后的清理重装方案
+    print("\n🔧 方案4: 最后的清理重装方案...")
     run_command("pip uninstall -y datasets pyarrow", "卸载冲突包")
-    run_command("pip install pyarrow --quiet", "重新安装pyarrow")
+    run_command("pip install 'pyarrow>=8.0.0,<12.0.0' --quiet", "安装兼容的pyarrow版本")
     run_command("pip install 'datasets==2.14.0' --quiet", "安装datasets 2.14.0")
 
-    # 验证修复
+    # 方案5: 创建兼容性补丁
+    print("\n🔧 方案5: 创建兼容性补丁...")
+    try:
+        # 检查是否需要打补丁
+        import pyarrow as pa
+        if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+            # 创建别名以实现兼容性
+            pa.PyExtensionType = pa.ExtensionType
+            print("✅ 已创建PyExtensionType兼容性补丁")
+
+        # 重新尝试导入
+        import datasets
+        print(f"✅ datasets {datasets.__version__} 导入成功")
+
+        # 测试基本功能
+        from datasets import load_dataset
+        print("✅ datasets基本功能正常")
+
+        return True
+
+    except Exception as e:
+        print(f"❌ 补丁方案也失败: {e}")
+
+    # 最终备用方案
     print("\n🔍 验证修复...")
     try:
         import datasets
@@ -78,6 +110,7 @@ def fix_modelscope_dependencies():
         print("1. 在代码中使用 --skip-env-check 参数")
         print("2. python main.py --skip-env-check --step analysis")
         print("3. 或者直接运行: python scripts/data_processor.py download")
+        print("4. 手动安装: pip install 'pyarrow>=8.0.0,<12.0.0' 'datasets==2.14.0'")
 
         return False
 

@@ -111,7 +111,29 @@ def install_dependencies():
 
     except subprocess.CalledProcessError as e:
         print(f"❌ 依赖安装失败: {e.stderr}")
-        return False
+
+        # 备用方案：尝试快速修复
+        print("\n🔧 尝试备用修复方案...")
+        try:
+            print("  运行快速兼容性补丁...")
+            result = subprocess.run([sys.executable, 'quick_pyarrow_fix.py'],
+                                  capture_output=True, text=True, check=True)
+            print("✅ 兼容性补丁应用成功")
+
+            # 重新尝试安装依赖
+            if platform_name == 'modelscope':
+                result = subprocess.run([sys.executable, 'fix_modelscope_deps.py'],
+                                      capture_output=True, text=True, check=True)
+            else:
+                result = subprocess.run([sys.executable, 'install_deps.py'],
+                                      capture_output=True, text=True, check=True)
+
+            print("✅ 依赖安装完成（使用备用方案）")
+            return True
+
+        except subprocess.CalledProcessError as e2:
+            print(f"❌ 备用方案也失败: {e2.stderr}")
+            return False
 
 def run_setup_verification():
     """运行环境验证"""

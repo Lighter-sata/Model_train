@@ -47,7 +47,15 @@ def install_dependencies():
 
     # 安装datasets（特定版本）
     print("\n📦 安装datasets...")
-    run_command("pip install 'datasets==2.14.0' --quiet", "安装datasets 2.14.0")
+    datasets_success = run_command("pip install 'datasets==2.14.0' --quiet", "安装datasets 2.14.0")
+
+    if not datasets_success:
+        print("\n🔧 应用兼容性补丁...")
+        run_command("python quick_pyarrow_fix.py", "运行快速修复脚本")
+
+        # 重新尝试安装
+        print("\n📦 重新安装datasets...")
+        run_command("pip install 'datasets==2.14.0' --quiet", "重新安装datasets 2.14.0")
 
     # 安装其他依赖
     print("\n📦 安装数据处理依赖...")

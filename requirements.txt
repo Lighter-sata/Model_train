@@ -4,6 +4,7 @@ transformers<4.58
 ms-swift<3.10
 modelscope>=1.30.0
 datasets==2.14.0  # 固定版本以确保兼容性
+pyarrow>=11.0.0,<15.0.0  # pyarrow版本约束，确保与datasets兼容
 
 # 数据处理和分析
 pandas
