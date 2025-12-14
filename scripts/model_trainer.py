@@ -66,37 +66,51 @@ def register_datasets():
         )
     )
 
+def load_config():
+    """加载训练配置"""
+    import json
+    project_root = get_project_root()
+    config_file = project_root / 'config' / 'train_config.json'
+
+    with open(config_file, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
 def get_training_args(output_dir: Optional[str] = None) -> TrainArguments:
     """获取优化的训练参数"""
     if output_dir is None:
         project_root = get_project_root()
         output_dir = str(project_root / 'models' / 'enhanced_output')
-    """获取优化的训练参数"""
+
+    # 加载配置文件
+    config = load_config()
 
     return TrainArguments(
-        model='Qwen/Qwen3-4B-Instruct-2507',
-        model_type='qwen3',
+        model=config['model']['model_id'],
+        model_type=config['model']['model_type'],
         dataset=['swift/financial_classification:train'],
         train_type='lora',
-        torch_dtype='bfloat16',
-        num_train_epochs=5,
-        per_device_train_batch_size=2,
-        per_device_eval_batch_size=4,
-        learning_rate=1.8e-4,
-        lr_scheduler_type='cosine',
-        warmup_ratio=0.12,
-        lora_rank=16,
-        lora_alpha=32,
-        target_modules=['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj'],
-        lora_dropout=0.05,
-        gradient_accumulation_steps=8,
-        max_grad_norm=1.0,
-        max_length=1024,
-        save_steps=100,
-        eval_steps=100,
-        save_total_limit=5,
-        logging_steps=20,
+        torch_dtype=config['model']['torch_dtype'],
         output_dir=output_dir,
+        num_train_epochs=config['training']['num_train_epochs'],
+        per_device_train_batch_size=config['training']['per_device_train_batch_size'],
+        per_device_eval_batch_size=config['training']['per_device_eval_batch_size'],
+        gradient_accumulation_steps=config['training']['gradient_accumulation_steps'],
+        learning_rate=config['training']['learning_rate'],
+        lr_scheduler_type='cosine',
+        warmup_ratio=0.1,
+        max_length=config['training']['max_length'],
+        save_steps=config['training']['save_steps'],
+        eval_steps=config['training']['eval_steps'],
+        logging_steps=config['training']['logging_steps'],
+        save_total_limit=config['training']['save_total_limit'],
+        load_best_model_at_end=config['training']['load_best_model_at_end'],
+        metric_for_best_model=config['training']['metric_for_best_model'],
+        greater_is_better=config['training']['greater_is_better'],
+        lora_rank=config['lora']['lora_rank'],
+        lora_alpha=config['lora']['lora_alpha'],
+        lora_dropout=config['lora']['lora_dropout'],
+        target_modules=config['lora']['target_modules'],
+        max_grad_norm=1.0,
         save_only_model=True,
         packing=True,
         dataset_num_proc=4,
@@ -110,7 +124,6 @@ def get_training_args(output_dir: Optional[str] = None) -> TrainArguments:
         early_stopping=True,
         early_stopping_patience=3,
         early_stopping_threshold=0.001,
-        load_best_model_at_end=True,
     )
 
 def extract_prediction(response: str) -> int:
@@ -172,14 +185,18 @@ def get_inference_args(ckpt_dir: str) -> InferArguments:
     project_root = get_project_root()
     result_path = str(project_root / 'results' / 'enhanced_result.jsonl')
 
+    # 加载配置文件
+    config = load_config()
+
     return InferArguments(
         adapters=[ckpt_dir],
-        temperature=0.0,
+        temperature=config['inference']['temperature'],
         max_batch_size=16,
-        max_new_tokens=8,
+        max_new_tokens=config['inference']['max_new_tokens'],
         val_dataset=["swift/financial_classification:test"],
         infer_backend='pt',
-        do_sample=False,
+        do_sample=config['inference']['do_sample'],
+        repetition_penalty=config['inference']['repetition_penalty'],
         result_path=result_path
     )
 
