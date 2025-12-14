@@ -102,10 +102,15 @@ def run_command(cmd, desc=""):
     try:
         # 检测运行环境
         if os.path.exists('/mnt/workspace'):
-            # 魔搭平台环境 - 使用当前目录作为工作目录
+            # 魔搭平台环境 - 使用当前目录作为工作目录，并确保site_packages在PYTHONPATH中
             env = os.environ.copy()
             current_dir = os.getcwd()
-            env['PYTHONPATH'] = current_dir
+            site_packages_path = os.path.join(current_dir, 'site_packages')
+            existing_pythonpath = env.get('PYTHONPATH', '')
+            if existing_pythonpath:
+                env['PYTHONPATH'] = f"{site_packages_path}:{current_dir}:{existing_pythonpath}"
+            else:
+                env['PYTHONPATH'] = f"{site_packages_path}:{current_dir}"
             result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True, env=env, cwd=current_dir)
         else:
             # 本地环境
