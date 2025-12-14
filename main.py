@@ -10,6 +10,69 @@ import argparse
 import subprocess
 from pathlib import Path
 
+def show_recovery_options(failed_step):
+    """显示错误恢复选项"""
+    print("\n" + "="*60)
+    print(f"🔧 {failed_step} 失败 - 恢复选项")
+    print("="*60)
+
+    steps = {
+        'analysis': ['数据下载问题', 'python scripts/data_processor.py download', 'python scripts/data_processor.py analyze'],
+        'train': ['依赖或模型问题', 'python fix_datasets_compatibility.py', 'python main.py --step train'],
+        'inference': ['模型文件问题', 'ls -la models/', 'python main.py --step inference'],
+        'evaluate': ['结果文件问题', 'ls -la results/', 'python main.py --step evaluate']
+    }
+
+    if failed_step in steps:
+        issue, check_cmd, retry_cmd = steps[failed_step]
+        print(f"可能问题: {issue}")
+        print(f"检查命令: {check_cmd}")
+        print(f"重试命令: {retry_cmd}")
+
+    print("\n通用解决方法:")
+    print("1. 📦 检查依赖: python test_setup.py")
+    print("2. 🔧 修复PyArrow: python fix_pyarrow_manual.py")
+    print("3. 📊 修复datasets: python fix_datasets_compatibility.py")
+    print("4. 📝 查看日志: tail -f logs/train.log")
+    print("5. ⏭️  跳过此步骤: python main.py --step all --skip-step " + failed_step)
+    print("="*60)
+
+def show_command_error(cmd, error):
+    """显示命令执行错误详情"""
+    print("\n" + "="*60)
+    print("🔍 错误详情")
+    print("="*60)
+    print(f"命令: {cmd}")
+    print(f"退出码: {error.returncode}")
+
+    if error.stdout and error.stdout.strip():
+        print(f"\n📝 标准输出:")
+        # 只显示最后几行，避免输出太长
+        stdout_lines = error.stdout.strip().split('\n')
+        if len(stdout_lines) > 20:
+            print("... (输出过长，只显示最后20行)")
+            stdout_lines = stdout_lines[-20:]
+        for line in stdout_lines:
+            print(f"  {line}")
+
+    if error.stderr and error.stderr.strip():
+        print(f"\n❌ 错误输出:")
+        # 只显示最后几行错误信息
+        stderr_lines = error.stderr.strip().split('\n')
+        if len(stderr_lines) > 20:
+            print("... (错误输出过长，只显示最后20行)")
+            stderr_lines = stderr_lines[-20:]
+        for line in stderr_lines:
+            print(f"  {line}")
+
+    print("="*60)
+    print("💡 解决建议:")
+    print("1. 检查依赖: python test_setup.py")
+    print("2. 修复PyArrow: python fix_pyarrow_manual.py")
+    print("3. 修复datasets: python fix_datasets_compatibility.py")
+    print("4. 查看日志: tail -f logs/train.log")
+    print("="*60)
+
 def run_command(cmd, desc=""):
     """运行命令并显示状态"""
     print(f"🔧 {desc}")
@@ -27,7 +90,8 @@ def run_command(cmd, desc=""):
         print("✅ 成功")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ 失败: {e.stderr}")
+        print(f"❌ 失败")
+        show_command_error(cmd, e)
         return False
 
 def check_environment():
@@ -177,28 +241,28 @@ def main():
             print("\n📊 执行: 数据分析")
             if not run_data_analysis():
                 print("\n❌ 数据分析失败！停止执行。")
-                print("请检查上面的错误信息并修复问题。")
+                show_recovery_options("analysis")
                 return
 
         if args.step in ['all', 'train']:
             print("\n🚀 执行: 模型训练")
             if not run_training():
                 print("\n❌ 模型训练失败！停止执行。")
-                print("请检查上面的错误信息并修复问题。")
+                show_recovery_options("train")
                 return
 
         if args.step in ['all', 'inference']:
             print("\n🧠 执行: 模型推理")
             if not run_inference():
                 print("\n❌ 模型推理失败！停止执行。")
-                print("请检查上面的错误信息并修复问题。")
+                show_recovery_options("inference")
                 return
 
         if args.step in ['all', 'evaluate']:
             print("\n📊 执行: 性能评估")
             if not run_evaluation():
                 print("\n❌ 性能评估失败！停止执行。")
-                print("请检查上面的错误信息并修复问题。")
+                show_recovery_options("evaluate")
                 return
 
     except KeyboardInterrupt:
