@@ -145,8 +145,8 @@ def run_with_monitoring(step="all"):
     success = monitor_training(python_cmd, log_file)
 
     if not success:
-        print("
-❌ 训练失败，请根据上方错误信息进行修复"        sys.exit(1)
+        print("\n❌ 训练失败，请根据上方错误信息进行修复")
+        sys.exit(1)
     else:
         print("\n🎉 训练成功完成！")
         sys.exit(0)
