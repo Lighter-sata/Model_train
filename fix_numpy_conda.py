@@ -147,8 +147,8 @@ def main():
             print("\n🎉 NumPy兼容性环境创建完成！")
             print("\n使用方法:")
             print(f"1. 激活环境: conda activate {env_name}")
-            print("2. 或使用包装脚本: ./run_with_numpy_compat.sh python main.py --step all"
-            print("3. 运行训练: python main.py --step all"
+            print("2. 或使用包装脚本: ./run_with_numpy_compat.sh python main.py --step all")
+            print("3. 运行训练: python main.py --step all")
             return True
 
     print("❌ 环境创建失败，请检查conda安装")
