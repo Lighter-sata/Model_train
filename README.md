@@ -85,18 +85,29 @@ python main.py --skip-env-check --step all
 
 ### 3. 执行训练流程
 ```bash
-# 完整流程：数据处理 -> 训练 -> 推理 -> 评估
+# 🚨 推荐：使用错误监控模式（遇到错误自动停止并显示详细信息）
+python stop_on_error.py all          # 完整流程监控
+python stop_on_error.py train        # 训练过程监控
+python stop_on_error.py analysis     # 数据分析监控
+
+# 标准执行（传统方式）
 python main.py --step all
 
 # 如果环境检查有问题，可以跳过
 python main.py --skip-env-check --step all
 
-# 或者分步执行
+# 分步执行
 python main.py --step analysis    # 数据分析
 python main.py --step train       # 模型训练
 python main.py --step inference   # 模型推理
 python main.py --step evaluate    # 性能评估
 ```
+
+#### 监控模式特点
+- 🔍 **实时监控**: 自动检测错误关键词
+- 🛑 **智能停止**: 遇到错误立即停止并显示详细信息
+- 📝 **完整日志**: 保存所有输出到日志文件
+- 💡 **解决建议**: 提供针对性的修复建议
 
 ### 4. 手动执行各模块
 ```bash
