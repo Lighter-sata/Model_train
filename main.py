@@ -28,7 +28,7 @@ except Exception as e:
     print(f"🔧 [main] pyarrow修复失败: {e}")
 
 try:
-    # 2. 修复datasets LargeList问题
+    # 2. 修复datasets LargeList和_FEATURE_TYPES问题
     import datasets
     print(f"🔧 [main] datasets版本: {datasets.__version__}")
 
@@ -55,11 +55,39 @@ try:
             datasets.LargeList = LargeList
             print("🔧 [main] 已创建datasets LargeList兼容类")
 
+    # 修复_FEATURE_TYPES
+    from datasets.features import features
+    if not hasattr(features, '_FEATURE_TYPES'):
+        print("🔧 [main] _FEATURE_TYPES不存在，开始修复...")
+
+        # 创建所有feature类型的字典
+        _FEATURE_TYPES = {}
+        for attr_name in dir(features):
+            attr = getattr(features, attr_name)
+            if (hasattr(attr, '__name__') and
+                hasattr(attr, '__module__') and
+                attr.__module__ == 'datasets.features.features' and
+                (attr_name.endswith('Type') or 'Array' in attr_name or 'Value' in attr_name or 'Class' in attr_name)):
+                _FEATURE_TYPES[attr_name] = attr
+
+        # 手动添加一些重要的类型
+        if hasattr(features, 'Sequence'):
+            _FEATURE_TYPES['LargeList'] = features.Sequence
+
+        # 将其添加到features模块
+        features._FEATURE_TYPES = _FEATURE_TYPES
+        print(f"🔧 [main] 已创建_FEATURE_TYPES ({len(_FEATURE_TYPES)}个类型)")
+
     # 验证修复
     if hasattr(datasets, 'LargeList'):
         print("✅ [main] LargeList修复成功")
     else:
         print("❌ [main] LargeList修复失败")
+
+    if hasattr(features, '_FEATURE_TYPES'):
+        print("✅ [main] _FEATURE_TYPES修复成功")
+    else:
+        print("❌ [main] _FEATURE_TYPES修复失败")
 
 except Exception as e:
     print(f"🔧 [main] datasets修复失败: {e}")

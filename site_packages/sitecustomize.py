@@ -63,6 +63,24 @@ try:
         # 添加到sys.modules
         sys.modules['datasets'] = ds
 
+        # 预设_FEATURE_TYPES
+        from datasets.features import features
+        if not hasattr(features, '_FEATURE_TYPES'):
+            _FEATURE_TYPES = {}
+            for attr_name in dir(features):
+                attr = getattr(features, attr_name)
+                if (hasattr(attr, '__name__') and
+                    hasattr(attr, '__module__') and
+                    attr.__module__ == 'datasets.features.features' and
+                    (attr_name.endswith('Type') or 'Array' in attr_name or 'Value' in attr_name or 'Class' in attr_name)):
+                    _FEATURE_TYPES[attr_name] = attr
+
+            if hasattr(features, 'Sequence'):
+                _FEATURE_TYPES['LargeList'] = features.Sequence
+
+            features._FEATURE_TYPES = _FEATURE_TYPES
+            print("🔧 [sitecustomize] 已预设_FEATURE_TYPES")
+
 except Exception as e:
     print(f"🔧 [sitecustomize] datasets预修复失败: {e}")
 
