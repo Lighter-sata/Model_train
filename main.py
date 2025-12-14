@@ -4,6 +4,72 @@
 一键执行完整训练和推理流程
 """
 
+# ===========================================
+# 紧急修复：datasets和pyarrow兼容性问题
+# 在任何其他导入之前执行
+# ===========================================
+
+print("🔧 [main] 开始紧急修复datasets兼容性...")
+
+try:
+    # 1. 修复pyarrow问题
+    import pyarrow as pa
+    print(f"🔧 [main] pyarrow版本: {pa.__version__}")
+
+    if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+        pa.PyExtensionType = pa.ExtensionType
+        print("🔧 [main] 已修复pyarrow.PyExtensionType")
+
+    if hasattr(pa, 'lib') and not hasattr(pa.lib, 'PyExtensionType') and hasattr(pa.lib, 'ExtensionType'):
+        pa.lib.PyExtensionType = pa.lib.ExtensionType
+        print("🔧 [main] 已修复pyarrow.lib.PyExtensionType")
+
+except Exception as e:
+    print(f"🔧 [main] pyarrow修复失败: {e}")
+
+try:
+    # 2. 修复datasets LargeList问题
+    import datasets
+    print(f"🔧 [main] datasets版本: {datasets.__version__}")
+
+    if not hasattr(datasets, 'LargeList'):
+        print("🔧 [main] LargeList不存在，开始修复...")
+
+        # 尝试从features导入
+        try:
+            from datasets.features import Sequence
+            datasets.LargeList = Sequence
+            print("🔧 [main] 已修复datasets LargeList (使用Sequence)")
+        except ImportError as e:
+            print(f"🔧 [main] 从features导入失败: {e}")
+            # 创建完整的兼容类
+            class LargeList:
+                """Full LargeList compatibility class for datasets"""
+                def __init__(self, dtype, length=None):
+                    self.dtype = dtype
+                    self.length = length
+
+                def __repr__(self):
+                    return f"LargeList(dtype={self.dtype}, length={self.length})"
+
+            datasets.LargeList = LargeList
+            print("🔧 [main] 已创建datasets LargeList兼容类")
+
+    # 验证修复
+    if hasattr(datasets, 'LargeList'):
+        print("✅ [main] LargeList修复成功")
+    else:
+        print("❌ [main] LargeList修复失败")
+
+except Exception as e:
+    print(f"🔧 [main] datasets修复失败: {e}")
+
+print("🔧 [main] 紧急修复完成，开始正常导入...\n")
+
+# ===========================================
+# 正常导入开始
+# ===========================================
+
 import os
 import sys
 import argparse
