@@ -1,169 +1,57 @@
 #!/usr/bin/env python3
 """
-金融文本相似度分类竞赛 - 主部署脚本
-一键执行完整训练和推理流程
+金融文本相似度分类竞赛 - 简化入口脚本
+直接运行优化后的训练
 """
 
-# ===========================================
-# 紧急修复：datasets和pyarrow兼容性问题
-# 在任何其他导入之前执行
-# ===========================================
-
-print("🔧 [main] 开始紧急修复datasets兼容性...")
-
-try:
-    # 1. 修复pyarrow问题
-    import pyarrow as pa
-    print(f"🔧 [main] pyarrow版本: {pa.__version__}")
-
-    if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
-        pa.PyExtensionType = pa.ExtensionType
-        print("🔧 [main] 已修复pyarrow.PyExtensionType")
-
-    if hasattr(pa, 'lib') and not hasattr(pa.lib, 'PyExtensionType') and hasattr(pa.lib, 'ExtensionType'):
-        pa.lib.PyExtensionType = pa.lib.ExtensionType
-        print("🔧 [main] 已修复pyarrow.lib.PyExtensionType")
-
-except Exception as e:
-    print(f"🔧 [main] pyarrow修复失败: {e}")
-
-try:
-    # 2. 修复datasets LargeList和_FEATURE_TYPES问题
-    import datasets
-    print(f"🔧 [main] datasets版本: {datasets.__version__}")
-
-    if not hasattr(datasets, 'LargeList'):
-        print("🔧 [main] LargeList不存在，开始修复...")
-
-        # 尝试从features导入
-        try:
-            from datasets.features import Sequence
-            datasets.LargeList = Sequence
-            print("🔧 [main] 已修复datasets LargeList (使用Sequence)")
-        except ImportError as e:
-            print(f"🔧 [main] 从features导入失败: {e}")
-            # 创建完整的兼容类
-            class LargeList:
-                """Full LargeList compatibility class for datasets"""
-                def __init__(self, dtype, length=None):
-                    self.dtype = dtype
-                    self.length = length
-
-                def __repr__(self):
-                    return f"LargeList(dtype={self.dtype}, length={self.length})"
-
-            datasets.LargeList = LargeList
-            print("🔧 [main] 已创建datasets LargeList兼容类")
-
-    # 修复_FEATURE_TYPES
-    from datasets.features import features
-    if not hasattr(features, '_FEATURE_TYPES'):
-        print("🔧 [main] _FEATURE_TYPES不存在，开始修复...")
-
-        # 创建所有feature类型的字典
-        _FEATURE_TYPES = {}
-        for attr_name in dir(features):
-            attr = getattr(features, attr_name)
-            if (hasattr(attr, '__name__') and
-                hasattr(attr, '__module__') and
-                attr.__module__ == 'datasets.features.features' and
-                (attr_name.endswith('Type') or 'Array' in attr_name or 'Value' in attr_name or 'Class' in attr_name)):
-                _FEATURE_TYPES[attr_name] = attr
-
-        # 手动添加一些重要的类型
-        if hasattr(features, 'Sequence'):
-            _FEATURE_TYPES['LargeList'] = features.Sequence
-
-        # 将其添加到features模块
-        features._FEATURE_TYPES = _FEATURE_TYPES
-        print(f"🔧 [main] 已创建_FEATURE_TYPES ({len(_FEATURE_TYPES)}个类型)")
-
-    # 修复exceptions模块
-    if not hasattr(datasets, 'exceptions'):
-        print("🔧 [main] exceptions模块不存在，开始修复...")
-        import types
-        exceptions_module = types.ModuleType('datasets.exceptions')
-
-        # 定义常用的异常类
-        exception_classes = [
-            'DatasetNotFoundError', 'DatasetBuildError', 'DatasetGenerationError',
-            'DatasetValidationError', 'NonMatchingChecksumError', 'DatasetInfoError',
-            'DataFilesNotFoundError', 'EmptyDatasetError', 'ManualDownloadError',
-            'DatasetNotImplementedError', 'DatasetOnlineError', 'DatasetOfflineError',
-            'StreamingError', 'CorruptedFileError', 'SplitNotFoundError'
-        ]
-
-        for exc_name in exception_classes:
-            exc_class = type(exc_name, (Exception,), {})
-            setattr(exceptions_module, exc_name, exc_class)
-
-        datasets.exceptions = exceptions_module
-        sys.modules['datasets.exceptions'] = exceptions_module
-        print("🔧 [main] 已创建exceptions模块")
-
-    # 修复HubDatasetModuleFactoryWithParquetExport
-    from datasets import load
-    if not hasattr(load, 'HubDatasetModuleFactoryWithParquetExport'):
-        print("🔧 [main] HubDatasetModuleFactoryWithParquetExport不存在，开始修复...")
-        from datasets.load import HubDatasetModuleFactoryWithoutScript
-
-        class HubDatasetModuleFactoryWithParquetExport(HubDatasetModuleFactoryWithoutScript):
-            '''兼容类，模拟Parquet导出功能'''
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.supports_parquet_export = True
-
-        load.HubDatasetModuleFactoryWithParquetExport = HubDatasetModuleFactoryWithParquetExport
-        print("🔧 [main] 已创建HubDatasetModuleFactoryWithParquetExport兼容类")
-
-    # 修复_get_importable_file_path
-    if not hasattr(load, '_get_importable_file_path'):
-        print("🔧 [main] _get_importable_file_path不存在，开始修复...")
-
-        def _get_importable_file_path(dataset_name, filename, use_auth_token=None):
-            '''兼容函数，返回可导入的文件路径'''
-            return f'{dataset_name}/{filename}'
-
-        load._get_importable_file_path = _get_importable_file_path
-        print("🔧 [main] 已创建_get_importable_file_path兼容函数")
-
-    # 修复resolve_trust_remote_code
-    if not hasattr(load, 'resolve_trust_remote_code'):
-        print("🔧 [main] resolve_trust_remote_code不存在，开始修复...")
-
-        def resolve_trust_remote_code(trust_remote_code, repo_id=None):
-            '''兼容函数，返回trust_remote_code参数'''
-            return trust_remote_code
-
-        load.resolve_trust_remote_code = resolve_trust_remote_code
-        print("🔧 [main] 已创建resolve_trust_remote_code兼容函数")
-
-    # 验证修复
-    if hasattr(datasets, 'LargeList'):
-        print("✅ [main] LargeList修复成功")
-    else:
-        print("❌ [main] LargeList修复失败")
-
-    if hasattr(features, '_FEATURE_TYPES'):
-        print("✅ [main] _FEATURE_TYPES修复成功")
-    else:
-        print("❌ [main] _FEATURE_TYPES修复失败")
-
-    if hasattr(datasets, 'exceptions'):
-        print("✅ [main] exceptions模块修复成功")
-    else:
-        print("❌ [main] exceptions模块修复失败")
-
-except Exception as e:
-    print(f"🔧 [main] datasets修复失败: {e}")
-
-print("🔧 [main] 紧急修复完成，开始正常导入...\n")
-
-# ===========================================
-# 正常导入开始
-# ===========================================
-
 import os
+import sys
+import argparse
+import subprocess
+
+def main():
+    parser = argparse.ArgumentParser(description='金融文本相似度分类训练')
+    parser.add_argument('--mode', choices=['train', 'quick'], default='train',
+                       help='运行模式: train(完整训练) 或 quick(快速测试)')
+
+    args = parser.parse_args()
+
+    print("🚀 金融文本相似度分类竞赛")
+    print("🎯 目标准确率: 0.87+")
+    print("🤖 使用模型: Qwen2-7B + LoRA")
+    print("💾 显存要求: <22GB")
+    print("="*50)
+
+    if args.mode == 'train':
+        print("🔥 开始完整训练...")
+        cmd = ['python', 'train_optimized.py']
+    else:
+        print("⚡ 开始快速测试...")
+        cmd = ['python', '-c', '''
+import torch
+print(f"CUDA可用: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU数量: {torch.cuda.device_count()}")
+    print(f"当前GPU: {torch.cuda.get_device_name()}")
+    print(f"显存总量: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f}GB")
+''']
+
+    try:
+        result = subprocess.run(cmd, check=True)
+        print("\n✅ 执行成功！")
+    except subprocess.CalledProcessError as e:
+        print(f"\n❌ 执行失败 (退出码: {e.returncode})")
+        print("💡 建议检查:")
+        print("1. 确保安装了Swift: pip install swift")
+        print("2. 检查GPU是否可用: nvidia-smi")
+        print("3. 查看详细日志")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n⏹️  用户中断执行")
+        sys.exit(130)
+
+if __name__ == '__main__':
+    main()
 import sys
 import argparse
 import subprocess
