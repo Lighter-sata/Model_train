@@ -73,6 +73,46 @@ from typing import Dict, Any
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 # ===========================================
+# 修复Swift库兼容性问题
+# ===========================================
+
+print("🔧 修复Swift库兼容性问题...")
+
+try:
+    # 1. 修复transformers ALLOWED_LAYER_TYPES
+    import sys
+    try:
+        import transformers
+        from transformers.configuration_utils import PretrainedConfig
+        if not hasattr(transformers.configuration_utils, 'ALLOWED_LAYER_TYPES'):
+            # 创建一个合理的默认值
+            transformers.configuration_utils.ALLOWED_LAYER_TYPES = [
+                'Linear', 'Conv1D', 'Conv2d', 'Embedding', 'LayerNorm', 'Dropout'
+            ]
+            print("🔧 已添加 ALLOWED_LAYER_TYPES 到 transformers")
+    except ImportError:
+        print("⚠️ transformers未安装，跳过修复")
+
+    # 2. 修复lmdeploy EngineGenerationConfig
+    try:
+        import lmdeploy
+        if not hasattr(lmdeploy, 'EngineGenerationConfig'):
+            # 创建一个基本的兼容类
+            class EngineGenerationConfig:
+                def __init__(self, **kwargs):
+                    for k, v in kwargs.items():
+                        setattr(self, k, v)
+            lmdeploy.EngineGenerationConfig = EngineGenerationConfig
+            print("🔧 已添加 EngineGenerationConfig 到 lmdeploy")
+    except ImportError:
+        print("⚠️ lmdeploy未安装，跳过修复")
+
+    print("✅ Swift库兼容性修复完成")
+
+except Exception as e:
+    print(f"⚠️ Swift库修复失败，继续尝试: {e}")
+
+# ===========================================
 # 验证修复效果
 # ===========================================
 
@@ -90,9 +130,27 @@ except Exception as e:
 
 # 现在安全地导入Swift
 print("🔧 导入Swift...")
-from swift.llm import (
-    TrainArguments, sft_main, register_dataset, DatasetMeta, ResponsePreprocessor, SubsetDataset
-)
+try:
+    from swift.llm import (
+        TrainArguments, sft_main, register_dataset, DatasetMeta, ResponsePreprocessor, SubsetDataset
+    )
+    print("✅ Swift导入成功")
+except ImportError as e:
+    print(f"❌ Swift导入失败: {e}")
+    # 如果Swift导入失败，提供替代方案
+    print("💡 尝试使用简化版本...")
+    try:
+        # 尝试只导入需要的部分
+        import swift
+        print(f"✅ Swift基础导入成功 (版本: {swift.__version__})")
+        print("⚠️ 但llm模块可能有兼容性问题")
+        print("💡 建议:")
+        print("1. 检查Swift版本兼容性")
+        print("2. 或使用Swift的命令行工具")
+        print("3. 或手动安装兼容版本的依赖")
+    except ImportError:
+        print("❌ Swift完全不可用")
+    exit(1)
 
 class FinancialSimilarityPreprocessor(ResponsePreprocessor):
     """金融文本相似度专用预处理器"""
