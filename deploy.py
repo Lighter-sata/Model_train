@@ -199,16 +199,46 @@ def run_full_pipeline():
     print("\n🚀 开始完整训练流程...")
     print("预计耗时: 90分钟")
     print("-" * 50)
+    print("💡 提示: 如果训练失败，将显示详细错误信息，请根据错误信息进行修复")
+    print("-" * 50)
 
     try:
-        # 执行完整流程
+        # 执行完整流程 - 不使用check=True，以便捕获输出
         result = subprocess.run([sys.executable, 'main.py', '--step', 'all'],
-                              check=True)
-        print("\n🎉 训练流程完成！")
-        return True
+                              capture_output=True, text=True)
 
-    except subprocess.CalledProcessError as e:
-        print(f"\n❌ 训练流程失败: {e}")
+        if result.returncode == 0:
+            print("\n🎉 训练流程完成！")
+            return True
+        else:
+            print("\n❌ 训练流程失败！")
+            print("=" * 60)
+            print("📋 详细错误信息:")
+            print("=" * 60)
+
+            # 显示标准输出（如果有）
+            if result.stdout.strip():
+                print("📝 标准输出:")
+                print(result.stdout)
+
+            # 显示错误输出
+            if result.stderr.strip():
+                print("\n❌ 错误输出:")
+                print(result.stderr)
+
+            print("=" * 60)
+            print("🔧 常见解决方法:")
+            print("1. 检查依赖是否正确安装: python test_setup.py")
+            print("2. 修复PyArrow问题: python fix_pyarrow_manual.py")
+            print("3. 修复datasets兼容性: python fix_datasets_compatibility.py")
+            print("4. 查看日志文件: tail -f logs/train.log")
+            print("=" * 60)
+
+            return False
+
+    except Exception as e:
+        print(f"\n❌ 执行过程中发生异常: {e}")
+        print("请检查系统环境和依赖安装。")
         return False
 
 def show_results():

@@ -168,20 +168,42 @@ def main():
             print("\n❌ 环境检查失败，请修复依赖问题后重试")
             return
 
-    # 执行相应步骤
-    success = True
+    # 执行相应步骤 - 遇到错误立即停止
+    print(f"\n🚀 开始执行步骤: {args.step}")
+    print("-" * 60)
 
-    if args.step in ['all', 'analysis']:
-        success &= run_data_analysis()
+    try:
+        if args.step in ['all', 'analysis']:
+            print("\n📊 执行: 数据分析")
+            if not run_data_analysis():
+                print("\n❌ 数据分析失败！停止执行。"                print("请检查上面的错误信息并修复问题。")
+                return
 
-    if args.step in ['all', 'train']:
-        success &= run_training()
+        if args.step in ['all', 'train']:
+            print("\n🚀 执行: 模型训练")
+            if not run_training():
+                print("\n❌ 模型训练失败！停止执行。"                print("请检查上面的错误信息并修复问题。")
+                return
 
-    if args.step in ['all', 'inference']:
-        success &= run_inference()
+        if args.step in ['all', 'inference']:
+            print("\n🧠 执行: 模型推理")
+            if not run_inference():
+                print("\n❌ 模型推理失败！停止执行。"                print("请检查上面的错误信息并修复问题。")
+                return
 
-    if args.step in ['all', 'evaluate']:
-        success &= run_evaluation()
+        if args.step in ['all', 'evaluate']:
+            print("\n📊 执行: 性能评估")
+            if not run_evaluation():
+                print("\n❌ 性能评估失败！停止执行。"                print("请检查上面的错误信息并修复问题。")
+                return
+
+    except KeyboardInterrupt:
+        print("\n\n⚠️  用户中断执行")
+        return
+    except Exception as e:
+        print(f"\n❌ 执行过程中发生未预期的错误: {e}")
+        print("请检查错误详情并修复问题。")
+        return
 
     # 总结
     print("\n" + "="*60)

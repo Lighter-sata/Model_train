@@ -90,8 +90,9 @@ def analyze_dataset():
     test_file = project_root / 'data' / 'test.jsonl'
 
     if not os.path.exists(train_file) or not os.path.exists(test_file):
-        print("❌ 数据文件不存在，请先运行数据下载")
-        return
+        print(f"❌ 数据文件不存在: {train_file} 或 {test_file}")
+        print("请先运行数据下载步骤")
+        return False
 
     # 加载数据
     print("📥 加载数据...")
@@ -102,7 +103,12 @@ def analyze_dataset():
     print(f"测试集: {len(test_data)} 条")
 
     if not train_data:
-        return
+        print("❌ 训练数据加载失败")
+        return False
+
+    if not test_data:
+        print("❌ 测试数据加载失败")
+        return False
 
     # 基本信息
     print("\n📋 数据集基本信息")

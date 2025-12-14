@@ -113,6 +113,24 @@ python scripts/model_trainer.py inference
 python scripts/evaluate.py
 ```
 
+### 5. 调试和诊断
+```bash
+# 🐛 运行完整项目诊断
+python debug.py
+
+# 🔍 测试环境和依赖
+python test_setup.py
+
+# 🔧 修复PyArrow兼容性问题
+python fix_pyarrow_manual.py
+
+# 🔧 修复datasets兼容性问题
+python fix_datasets_compatibility.py
+
+# 📊 测试补丁效果
+python test_pyarrow_patch.py
+```
+
 ## 💻 系统要求
 
 ### 最低配置

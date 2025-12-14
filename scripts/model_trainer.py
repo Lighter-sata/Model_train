@@ -217,14 +217,26 @@ def run_training():
 
     # 开始训练
     print("\n🚀 开始训练...")
+    print("💡 提示: 训练过程可能需要较长时间，请耐心等待...")
     try:
         sft_main(train_args)
         print("\n🎉 训练完成！")
         return True
     except Exception as e:
         print(f"\n❌ 训练失败: {e}")
+        print("\n🔍 详细错误信息:")
+        print("=" * 50)
         import traceback
         traceback.print_exc()
+        print("=" * 50)
+
+        print("\n🔧 可能的解决方法:")
+        print("1. 检查GPU是否可用: python -c 'import torch; print(torch.cuda.is_available())'")
+        print("2. 检查GPU内存是否充足")
+        print("3. 检查数据集文件是否存在")
+        print("4. 尝试使用更小的batch_size")
+        print("5. 检查依赖是否正确安装: python test_setup.py")
+
         return False
 
 def run_inference():
@@ -264,9 +276,19 @@ def run_inference():
         print("✅ 推理完成！")
         return True
     except Exception as e:
-        print(f"❌ 推理失败: {e}")
+        print(f"\n❌ 推理失败: {e}")
+        print("\n🔍 详细错误信息:")
+        print("=" * 50)
         import traceback
         traceback.print_exc()
+        print("=" * 50)
+
+        print("\n🔧 可能的解决方法:")
+        print("1. 检查模型文件是否存在")
+        print("2. 检查GPU内存是否充足")
+        print("3. 检查数据集是否正确注册")
+        print("4. 查看训练日志确认模型训练是否正常完成")
+
         return False
 
 def main():

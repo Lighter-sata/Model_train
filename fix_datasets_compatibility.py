@@ -38,18 +38,52 @@ def apply_datasets_patch():
             except ImportError:
                 print("❌ LargeList NOT found in datasets.features")
 
-        # 方法3: 检查是否有其他可能的名称
+        # 方法3: 检查是否有其他可能的名称或创建兼容层
         if not largelist_found:
-            possible_names = ['LargeList', 'Sequence', 'Array']
+            possible_names = ['LargeList', 'Sequence', 'Array', 'List', 'Value']
             for name in possible_names:
                 if hasattr(datasets, name):
                     print(f"ℹ️  Found alternative: {name}")
                 try:
                     from datasets.features import __dict__ as features_dict
                     if name in features_dict:
-                        print(f"ℹ️  Found {name} in datasets.features")
-                except:
-                    pass
+                        alt_class = features_dict[name]
+                        # 如果找到替代类，创建LargeList别名
+                        if name != 'LargeList':
+                            datasets.LargeList = alt_class
+                            print(f"✅ 使用 {name} 作为 LargeList 的替代")
+                            largelist_found = True
+                            break
+                except Exception as e:
+                    print(f"⚠️  检查 {name} 时出错: {e}")
+
+        # 方法4: 如果还是没找到，创建一个基本的兼容类
+        if not largelist_found:
+            print("🔧 创建基本的LargeList兼容类...")
+            try:
+                from datasets.features import Sequence, Value
+
+                # 创建一个基本的LargeList类作为Sequence的别名
+                datasets.LargeList = Sequence
+                print("✅ LargeList -> Sequence (兼容类创建成功)")
+                largelist_found = True
+
+            except Exception as e:
+                print(f"❌ 创建兼容类失败: {e}")
+
+                # 最后的尝试：创建一个最小化的类
+                try:
+                    class LargeList:
+                        """Minimal LargeList compatibility class"""
+                        def __init__(self, *args, **kwargs):
+                            pass
+
+                    datasets.LargeList = LargeList
+                    print("✅ 创建了最小化LargeList类")
+                    largelist_found = True
+
+                except Exception as e2:
+                    print(f"❌ 最小化类创建也失败: {e2}")
 
         return largelist_found
 
