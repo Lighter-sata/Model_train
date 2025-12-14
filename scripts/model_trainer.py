@@ -7,9 +7,34 @@
 import os
 import re
 import json
-import torch
 import argparse
 from typing import Dict, Any, List, Optional
+
+# 在导入可能依赖datasets的库之前，先修复datasets兼容性问题
+def fix_datasets_import():
+    """修复datasets导入问题"""
+    try:
+        import datasets
+        if not hasattr(datasets, 'LargeList'):
+            # 尝试从features导入
+            try:
+                from datasets.features import Sequence
+                datasets.LargeList = Sequence
+                print("🔧 [model_trainer] 已自动修复datasets LargeList导入问题")
+            except ImportError:
+                # 创建基础兼容类
+                class LargeList:
+                    pass
+                datasets.LargeList = LargeList
+                print("🔧 [model_trainer] 已创建datasets LargeList兼容类")
+    except ImportError:
+        pass
+
+# 运行修复
+fix_datasets_import()
+
+# 现在可以安全导入torch和swift
+import torch
 from swift.llm import (
     TrainArguments, sft_main, register_dataset, DatasetMeta, ResponsePreprocessor, SubsetDataset,
     InferArguments, infer_main
