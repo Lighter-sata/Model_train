@@ -135,7 +135,8 @@ def fix_numpy_compatibility():
         import pyarrow as pa
         import datasets
 
-        print("✅ 强制降级方案成功！"        print(f"  NumPy: {np.__version__}")
+        print("✅ 强制降级方案成功！")
+        print(f"  NumPy: {np.__version__}")
         print(f"  Pandas: {pd.__version__}")
         print(f"  PyArrow: {pa.__version__}")
         print(f"  Datasets: {datasets.__version__}")
