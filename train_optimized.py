@@ -83,13 +83,26 @@ try:
     import sys
     try:
         import transformers
-        from transformers.configuration_utils import PretrainedConfig
+        print("🔧 修复transformers兼容性...")
+
+        # 修复ALLOWED_LAYER_TYPES
         if not hasattr(transformers.configuration_utils, 'ALLOWED_LAYER_TYPES'):
-            # 创建一个合理的默认值
             transformers.configuration_utils.ALLOWED_LAYER_TYPES = [
                 'Linear', 'Conv1D', 'Conv2d', 'Embedding', 'LayerNorm', 'Dropout'
             ]
             print("🔧 已添加 ALLOWED_LAYER_TYPES 到 transformers")
+
+        # 修复Gemma3Config
+        if not hasattr(transformers, 'Gemma3Config'):
+            # 创建一个基本的配置类
+            from transformers.configuration_utils import PretrainedConfig
+            class Gemma3Config(PretrainedConfig):
+                model_type = "gemma3"
+                def __init__(self, **kwargs):
+                    super().__init__(**kwargs)
+            transformers.Gemma3Config = Gemma3Config
+            print("🔧 已添加 Gemma3Config 到 transformers")
+
     except ImportError:
         print("⚠️ transformers未安装，跳过修复")
 
