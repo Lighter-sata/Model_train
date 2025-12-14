@@ -14,12 +14,13 @@ def run_command(cmd, desc=""):
     """运行命令并显示状态"""
     print(f"🔧 {desc}")
     try:
-        # 在魔搭平台，确保使用正确的Python路径
+        # 检测运行环境
         if os.path.exists('/mnt/workspace'):
-            # 魔搭平台环境
+            # 魔搭平台环境 - 使用当前目录作为工作目录
             env = os.environ.copy()
-            env['PYTHONPATH'] = '/mnt/workspace'
-            result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True, env=env, cwd='/mnt/workspace')
+            current_dir = os.getcwd()
+            env['PYTHONPATH'] = current_dir
+            result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True, env=env, cwd=current_dir)
         else:
             # 本地环境
             result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)

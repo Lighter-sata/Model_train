@@ -15,8 +15,15 @@ from swift.llm import (
     InferArguments, infer_main
 )
 from swift.utils import read_from_jsonl, write_to_jsonl
+from pathlib import Path
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+def get_project_root():
+    """获取项目根目录"""
+    # 从当前脚本位置向上两级到达项目根目录
+    current_file = Path(__file__).resolve()
+    return current_file.parent.parent
 
 class EnhancedPreprocessor(ResponsePreprocessor):
     """优化的数据预处理器"""
@@ -59,7 +66,11 @@ def register_datasets():
         )
     )
 
-def get_training_args(output_dir: str = '../models/enhanced_output') -> TrainArguments:
+def get_training_args(output_dir: Optional[str] = None) -> TrainArguments:
+    """获取优化的训练参数"""
+    if output_dir is None:
+        project_root = get_project_root()
+        output_dir = str(project_root / 'models' / 'enhanced_output')
     """获取优化的训练参数"""
 
     return TrainArguments(
@@ -133,7 +144,11 @@ def extract_prediction(response: str) -> int:
     else:
         return 0
 
-def find_best_checkpoint(output_dir: str = '../models/enhanced_output') -> Optional[str]:
+def find_best_checkpoint(output_dir: Optional[str] = None) -> Optional[str]:
+    """查找最佳checkpoint"""
+    if output_dir is None:
+        project_root = get_project_root()
+        output_dir = str(project_root / 'models' / 'enhanced_output')
     """查找最佳checkpoint"""
     import glob
 
@@ -154,6 +169,9 @@ def find_best_checkpoint(output_dir: str = '../models/enhanced_output') -> Optio
 
 def get_inference_args(ckpt_dir: str) -> InferArguments:
     """获取推理参数"""
+    project_root = get_project_root()
+    result_path = str(project_root / 'results' / 'enhanced_result.jsonl')
+
     return InferArguments(
         adapters=[ckpt_dir],
         temperature=0.0,
@@ -162,7 +180,7 @@ def get_inference_args(ckpt_dir: str) -> InferArguments:
         val_dataset=["swift/financial_classification:test"],
         infer_backend='pt',
         do_sample=False,
-        result_path='../results/enhanced_result.jsonl'
+        result_path=result_path
     )
 
 def run_training():

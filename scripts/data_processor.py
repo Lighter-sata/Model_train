@@ -14,6 +14,13 @@ from tqdm import tqdm
 import jieba
 from wordcloud import WordCloud
 import argparse
+from pathlib import Path
+
+def get_project_root():
+    """获取项目根目录"""
+    # 从当前脚本位置向上两级到达项目根目录
+    current_file = Path(__file__).resolve()
+    return current_file.parent.parent
 
 def download_dataset_files():
     """直接下载数据集文件"""
@@ -21,9 +28,12 @@ def download_dataset_files():
     print("🔍 下载数据集")
     print("=" * 50)
 
+    # 获取项目根目录
+    project_root = get_project_root()
+
     # 创建目录
-    os.makedirs('../results/dataset_analysis', exist_ok=True)
-    os.makedirs('../data', exist_ok=True)
+    os.makedirs(project_root / 'results' / 'dataset_analysis', exist_ok=True)
+    os.makedirs(project_root / 'data', exist_ok=True)
 
     try:
         # 下载训练集
@@ -32,7 +42,7 @@ def download_dataset_files():
         response = requests.get(train_url)
         response.raise_for_status()
 
-        train_file = '../data/train.jsonl'
+        train_file = project_root / 'data' / 'train.jsonl'
         with open(train_file, 'w', encoding='utf-8') as f:
             f.write(response.text)
 
@@ -42,7 +52,7 @@ def download_dataset_files():
         response = requests.get(test_url)
         response.raise_for_status()
 
-        test_file = '../data/test.jsonl'
+        test_file = project_root / 'data' / 'test.jsonl'
         with open(test_file, 'w', encoding='utf-8') as f:
             f.write(response.text)
 
@@ -72,9 +82,12 @@ def analyze_dataset():
     print("\n📊 分析数据集")
     print("=" * 50)
 
+    # 获取项目根目录
+    project_root = get_project_root()
+
     # 检查数据文件是否存在
-    train_file = '../data/train.jsonl'
-    test_file = '../data/test.jsonl'
+    train_file = project_root / 'data' / 'train.jsonl'
+    test_file = project_root / 'data' / 'test.jsonl'
 
     if not os.path.exists(train_file) or not os.path.exists(test_file):
         print("❌ 数据文件不存在，请先运行数据下载")
@@ -134,7 +147,7 @@ def analyze_dataset():
     ax2.set_ylabel('样本数')
 
     plt.tight_layout()
-    plt.savefig('../results/dataset_analysis/class_distribution.png', dpi=300, bbox_inches='tight')
+    plt.savefig(project_root / 'results' / 'dataset_analysis' / 'class_distribution.png', dpi=300, bbox_inches='tight')
     plt.close()
 
     print("✅ 类别分布图已保存")
@@ -194,7 +207,7 @@ def analyze_dataset():
         plt.imshow(wordcloud, interpolation='bilinear')
         plt.axis('off')
         plt.title('高频词汇词云图')
-        plt.savefig('../results/dataset_analysis/wordcloud.png', dpi=300, bbox_inches='tight')
+        plt.savefig(project_root / 'results' / 'dataset_analysis' / 'wordcloud.png', dpi=300, bbox_inches='tight')
         plt.close()
         print("✅ 词云图已保存")
     except Exception as e:
@@ -222,7 +235,7 @@ def analyze_dataset():
         }
     }
 
-    with open('../results/dataset_analysis/analysis_report.json', 'w', encoding='utf-8') as f:
+    with open(project_root / 'results' / 'dataset_analysis' / 'analysis_report.json', 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
     print("✅ 分析报告已保存")
