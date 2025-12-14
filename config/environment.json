@@ -1,0 +1,42 @@
+{
+  "platforms": {
+    "modelscope": {
+      "workspace": "/mnt/workspace",
+      "python_path": "/mnt/workspace",
+      "gpu_detection": true
+    },
+    "local": {
+      "workspace": ".",
+      "python_path": ".",
+      "gpu_detection": true
+    }
+  },
+  "dependencies": {
+    "required": [
+      "torch>=2.0.0",
+      "transformers<4.58",
+      "ms-swift<3.10",
+      "modelscope>=1.30.0"
+    ],
+    "recommended": [
+      "datasets==2.14.0",
+      "pandas",
+      "numpy",
+      "scikit-learn",
+      "matplotlib",
+      "seaborn",
+      "jieba",
+      "tqdm",
+      "wordcloud",
+      "plotly",
+      "requests"
+    ]
+  },
+  "system_requirements": {
+    "min_python_version": "3.8",
+    "recommended_python_version": "3.10+",
+    "min_memory_gb": 16,
+    "recommended_memory_gb": 32,
+    "gpu_memory_gb": 8
+  }
+}

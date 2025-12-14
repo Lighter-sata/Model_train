@@ -1,0 +1,58 @@
+# 字节码文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 模型文件和检查点
+models/
+*.pth
+*.pt
+*.bin
+*.safetensors
+checkpoint-*/
+
+# 数据文件（如果不想提交训练数据）
+# data/
+
+# 结果和日志
+results/predictions/
+results/evaluation_results/
+logs/*.log
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+.tmp/
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 环境文件
+.env
+.venv/
+venv/
+env/
+
+# Jupyter 文件
+.ipynb_checkpoints/
+
+# 构建文件
+build/
+dist/
+*.egg-info/
+
+# 测试覆盖率
+.coverage
+htmlcov/
+
+# 网络缓存
+.pip_cache/
