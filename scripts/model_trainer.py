@@ -29,17 +29,17 @@ class EnhancedPreprocessor(ResponsePreprocessor):
     """优化的数据预处理器"""
 
     def preprocess(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        query = f"""请判断下面两句话在金融语境下是否表达相同的语义含义。
+        query = f"""判断下面两句金融咨询文本是否表达相同的语义含义。
 
 句子1: {row['text1']}
 句子2: {row['text2']}
 
-要求：
-- 如果两句话含义相同或非常相似，输出1
-- 如果两句话含义不同或不相似，输出0
-- 只输出数字0或1，不要输出其他内容
+规则：
+- 含义相同或非常相似: 输出1
+- 含义不同或不相似: 输出0
+- 只输出单个数字0或1
 
-判断结果: """
+结果: """
 
         response = str(row['label'])
         row = {
@@ -88,6 +88,15 @@ def get_training_args(output_dir: Optional[str] = None) -> TrainArguments:
         model=config['model']['model_id'],
         model_type=config['model']['model_type'],
         dataset=['swift/financial_classification:train'],
+        dataset_config={
+            'trust_remote_code': True,
+            'download_mode': 'reuse_dataset_if_exists'
+        },
+        # 类别平衡调整（训练集中0:69%, 1:31%）
+        loss_scale_config={
+            '0': 0.7,  # 减少多数类权重
+            '1': 1.3   # 增加少数类权重
+        },
         train_type='lora',
         torch_dtype=config['model']['torch_dtype'],
         output_dir=output_dir,
@@ -97,7 +106,9 @@ def get_training_args(output_dir: Optional[str] = None) -> TrainArguments:
         gradient_accumulation_steps=config['training']['gradient_accumulation_steps'],
         learning_rate=config['training']['learning_rate'],
         lr_scheduler_type='cosine',
-        warmup_ratio=0.1,
+        warmup_ratio=config['training']['warmup_ratio'],
+        weight_decay=config['training']['weight_decay'],
+        max_grad_norm=config['training']['max_grad_norm'],
         max_length=config['training']['max_length'],
         save_steps=config['training']['save_steps'],
         eval_steps=config['training']['eval_steps'],
