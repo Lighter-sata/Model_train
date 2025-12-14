@@ -12,15 +12,36 @@ def apply_patch():
     """应用pyarrow补丁"""
     try:
         import pyarrow as pa
+        import pyarrow.lib as palib
+
+        patched = False
+
+        # 在pyarrow顶级模块上应用补丁
         if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
             pa.PyExtensionType = pa.ExtensionType
-            print("✅ 已应用pyarrow兼容性补丁")
+            print("✅ 已应用pyarrow顶级模块补丁")
+            patched = True
+
+        # 在pyarrow.lib模块上应用补丁
+        if not hasattr(palib, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+            palib.PyExtensionType = pa.ExtensionType
+            print("✅ 已应用pyarrow.lib模块补丁")
+            patched = True
+
+        # 额外确保ExtensionType在lib中也可用
+        if hasattr(pa, 'ExtensionType') and not hasattr(palib, 'ExtensionType'):
+            palib.ExtensionType = pa.ExtensionType
+            print("✅ 已复制ExtensionType到pyarrow.lib")
+            patched = True
+
+        if patched:
             return True
         else:
             print("✅ pyarrow已兼容，无需补丁")
             return True
-    except ImportError:
-        print("❌ 无法导入pyarrow")
+
+    except ImportError as e:
+        print(f"❌ 无法导入pyarrow: {e}")
         return False
 
 def run_command(cmd, desc=""):

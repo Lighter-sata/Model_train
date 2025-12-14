@@ -11,12 +11,29 @@ def apply_pyarrow_patch():
     """应用pyarrow兼容性补丁"""
     try:
         import pyarrow as pa
+        import pyarrow.lib as palib
 
-        # 检查是否需要补丁
+        patched = False
+
+        # 检查顶级模块
         if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
-            # 在较新版本的pyarrow中，PyExtensionType已被重命名为ExtensionType
             pa.PyExtensionType = pa.ExtensionType
-            print("✅ 已应用pyarrow兼容性补丁 (PyExtensionType -> ExtensionType)")
+            print("✅ 已应用pyarrow顶级模块补丁")
+            patched = True
+
+        # 检查lib模块
+        if not hasattr(palib, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+            palib.PyExtensionType = pa.ExtensionType
+            print("✅ 已应用pyarrow.lib模块补丁")
+            patched = True
+
+        # 确保ExtensionType在lib中可用
+        if hasattr(pa, 'ExtensionType') and not hasattr(palib, 'ExtensionType'):
+            palib.ExtensionType = pa.ExtensionType
+            print("✅ 已复制ExtensionType到pyarrow.lib")
+            patched = True
+
+        if patched:
             return True
         elif hasattr(pa, 'PyExtensionType'):
             print("✅ pyarrow版本兼容，无需补丁")
@@ -25,8 +42,8 @@ def apply_pyarrow_patch():
             print("❌ pyarrow缺少必要的ExtensionType类")
             return False
 
-    except ImportError:
-        print("❌ 无法导入pyarrow")
+    except ImportError as e:
+        print(f"❌ 无法导入pyarrow: {e}")
         return False
 
 def test_datasets_import():
