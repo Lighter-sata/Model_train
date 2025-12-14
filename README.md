@@ -14,12 +14,24 @@
 ## 🚀 快速开始
 
 ### 在魔搭平台运行
-```bash
-# 一键训练（推荐）
-python main.py
 
-# 或直接运行优化脚本
+#### 选项1: Swift优化版 (推荐，更高性能)
+```bash
+# 使用Swift库，LoRA微调，性能更优
 python train_optimized.py
+```
+
+#### 选项2: PyTorch基础版 (兼容性最好)
+```bash
+# 不依赖Swift，直接使用transformers
+# 如果Swift有兼容性问题，使用这个
+python train_basic.py
+```
+
+#### 环境检查
+```bash
+# 检查系统环境和选择合适的训练脚本
+python main.py
 ```
 
 ### 本地测试
@@ -28,7 +40,19 @@ python train_optimized.py
 python main.py --mode quick
 ```
 
-## 📊 性能配置
+## 📊 训练脚本对比
+
+| 特性 | Swift优化版 | PyTorch基础版 |
+|------|------------|----------------|
+| **依赖** | Swift + transformers | 只需transformers |
+| **微调方法** | LoRA | 全量微调分类头 |
+| **性能** | 更高 (参数效率) | 稍低 (计算量大) |
+| **显存使用** | 更少 | 较多 |
+| **兼容性** | 可能有版本问题 | 高度兼容 |
+| **训练时间** | 2-3小时 | 2-4小时 |
+| **预期准确率** | 0.87+ | 0.85+ |
+
+## ⚙️ 核心配置 (Swift优化版)
 
 | 参数 | 配置 | 说明 |
 |------|------|------|
