@@ -248,14 +248,22 @@ cp results/enhanced_result.jsonl results/result.json
 
 1. **PyArrow兼容性错误** (`AttributeError: module 'pyarrow' has no attribute 'PyExtensionType'`)：
    ```bash
-   # 自动修复（推荐）
-   python quick_pyarrow_fix.py
+   # 一键修复（推荐）
+   python fix_pyarrow_manual.py
 
-   # 或手动修复
-   pip install 'pyarrow>=8.0.0,<12.0.0' 'datasets==2.14.0'
+   # 或分步手动修复
+   pip uninstall -y datasets pyarrow
+   pip install 'pyarrow>=8.0.0,<12.0.0'
+   pip install 'datasets==2.14.0'
 
    # 验证修复
    python -c "import datasets; print('成功')"
+   ```
+
+   **如果还失败**：
+   ```bash
+   # 设置环境变量后运行
+   PYTHONPATH=site_packages python fix_pyarrow_manual.py
    ```
 
 2. **数据集下载失败**：

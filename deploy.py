@@ -90,49 +90,80 @@ def check_gpu():
 
     return True
 
+def apply_pyarrow_patch():
+    """应用pyarrow兼容性补丁"""
+    try:
+        import pyarrow as pa
+        if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+            pa.PyExtensionType = pa.ExtensionType
+            print("🔧 已应用pyarrow兼容性补丁")
+            return True
+        return True
+    except ImportError:
+        return False
+
 def install_dependencies():
     """安装依赖"""
     print("\n📦 安装依赖...")
 
     platform_name = detect_platform()
 
+    # 设置环境变量，让sitecustomize.py自动运行
+    env = os.environ.copy()
+    current_pythonpath = env.get('PYTHONPATH', '')
+    if current_pythonpath:
+        env['PYTHONPATH'] = f"site_packages:{current_pythonpath}"
+    else:
+        env['PYTHONPATH'] = "site_packages"
+
     try:
         if platform_name == 'modelscope':
             print("  检测到魔搭平台，使用专用安装脚本...")
             result = subprocess.run([sys.executable, 'fix_modelscope_deps.py'],
-                                  capture_output=True, text=True, check=True)
+                                  capture_output=True, text=True, check=True, env=env)
         else:
             print("  使用标准安装脚本...")
             result = subprocess.run([sys.executable, 'install_deps.py'],
-                                  capture_output=True, text=True, check=True)
+                                  capture_output=True, text=True, check=True, env=env)
 
         print("✅ 依赖安装完成")
         return True
 
     except subprocess.CalledProcessError as e:
-        print(f"❌ 依赖安装失败: {e.stderr}")
+        print(f"❌ 依赖安装失败: {e.stderr[:500]}")
 
-        # 备用方案：尝试快速修复
-        print("\n🔧 尝试备用修复方案...")
+        # 备用方案：强制重新安装
+        print("\n🔧 尝试强制重新安装...")
         try:
-            print("  运行快速兼容性补丁...")
-            result = subprocess.run([sys.executable, 'quick_pyarrow_fix.py'],
-                                  capture_output=True, text=True, check=True)
-            print("✅ 兼容性补丁应用成功")
-
-            # 重新尝试安装依赖
             if platform_name == 'modelscope':
-                result = subprocess.run([sys.executable, 'fix_modelscope_deps.py'],
-                                      capture_output=True, text=True, check=True)
-            else:
-                result = subprocess.run([sys.executable, 'install_deps.py'],
-                                      capture_output=True, text=True, check=True)
+                # 强制清理并重新安装
+                print("  强制清理datasets和pyarrow...")
+                force_install_cmd = '''
+import subprocess
+import sys
+import os
+# 设置PYTHONPATH
+os.environ["PYTHONPATH"] = "site_packages:" + os.environ.get("PYTHONPATH", "")
+subprocess.run([sys.executable, "quick_pyarrow_fix.py"], check=True)
+subprocess.run(["pip", "uninstall", "-y", "datasets", "pyarrow"], check=True)
+subprocess.run(["pip", "install", "pyarrow>=8.0.0,<12.0.0"], check=True)
+subprocess.run(["pip", "install", "datasets==2.14.0"], check=True)
+print("强制重装完成")
+'''
+                subprocess.run([sys.executable, '-c', force_install_cmd], check=True, env=env)
 
-            print("✅ 依赖安装完成（使用备用方案）")
+            # 再次尝试运行修复脚本
+            result = subprocess.run([sys.executable, 'fix_modelscope_deps.py'],
+                                  capture_output=True, text=True, check=True, env=env)
+            print("✅ 依赖安装完成（强制重装）")
             return True
 
         except subprocess.CalledProcessError as e2:
-            print(f"❌ 备用方案也失败: {e2.stderr}")
+            print(f"❌ 强制重装也失败: {e2.stderr[:200]}")
+            print("\n💡 最后的建议:")
+            print("1. 手动运行: PYTHONPATH=site_packages python -c \"import pyarrow as pa; pa.PyExtensionType = pa.ExtensionType if hasattr(pa, 'ExtensionType') else None\"")
+            print("2. 然后运行: pip install 'pyarrow>=8.0.0,<12.0.0' 'datasets==2.14.0'")
+            print("3. 最后运行: PYTHONPATH=site_packages python main.py --step all")
             return False
 
 def run_setup_verification():

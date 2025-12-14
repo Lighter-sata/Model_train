@@ -7,6 +7,15 @@
 import subprocess
 import sys
 
+# 在导入任何可能依赖pyarrow的库之前，先应用补丁
+try:
+    import pyarrow as pa
+    if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+        pa.PyExtensionType = pa.ExtensionType
+        print("🔧 已自动应用pyarrow兼容性补丁")
+except ImportError:
+    pass
+
 def run_command(cmd, desc=""):
     """运行命令"""
     print(f"🔧 {desc}")
@@ -18,6 +27,28 @@ def run_command(cmd, desc=""):
         print(f"❌ 失败: {e.stderr[:200]}...")
         return False
 
+def apply_pyarrow_patch():
+    """应用pyarrow兼容性补丁"""
+    try:
+        import pyarrow as pa
+
+        # 检查是否需要补丁
+        if not hasattr(pa, 'PyExtensionType') and hasattr(pa, 'ExtensionType'):
+            # 在较新版本的pyarrow中，PyExtensionType已被重命名为ExtensionType
+            pa.PyExtensionType = pa.ExtensionType
+            print("✅ 已应用pyarrow兼容性补丁 (PyExtensionType -> ExtensionType)")
+            return True
+        elif hasattr(pa, 'PyExtensionType'):
+            print("✅ pyarrow版本兼容，无需补丁")
+            return True
+        else:
+            print("❌ pyarrow缺少必要的ExtensionType类")
+            return False
+
+    except ImportError:
+        print("❌ 无法导入pyarrow")
+        return False
+
 def fix_modelscope_dependencies():
     """修复魔搭平台的依赖问题"""
 
@@ -26,6 +57,10 @@ def fix_modelscope_dependencies():
 
     print("📋 魔搭平台环境信息:")
     print(f"  Python版本: {sys.version}")
+
+    # 首先应用补丁！
+    print("\n🔧 第一步: 应用兼容性补丁...")
+    patch_success = apply_pyarrow_patch()
 
     # 检查当前安装的包
     print("\n📦 检查当前安装...")
@@ -136,6 +171,11 @@ if __name__ == '__main__':
     import os
     if os.path.exists('/mnt/workspace'):
         print("检测到魔搭平台环境，自动开始修复...")
-        fix_modelscope_dependencies()
+        # 在魔搭平台，首先应用补丁
+        patch_result = apply_pyarrow_patch()
+        if patch_result:
+            fix_modelscope_dependencies()
+        else:
+            print("❌ 补丁应用失败，退出")
     else:
         main()
