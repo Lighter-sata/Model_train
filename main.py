@@ -78,6 +78,66 @@ try:
         features._FEATURE_TYPES = _FEATURE_TYPES
         print(f"🔧 [main] 已创建_FEATURE_TYPES ({len(_FEATURE_TYPES)}个类型)")
 
+    # 修复exceptions模块
+    if not hasattr(datasets, 'exceptions'):
+        print("🔧 [main] exceptions模块不存在，开始修复...")
+        import types
+        exceptions_module = types.ModuleType('datasets.exceptions')
+
+        # 定义常用的异常类
+        exception_classes = [
+            'DatasetNotFoundError', 'DatasetBuildError', 'DatasetGenerationError',
+            'DatasetValidationError', 'NonMatchingChecksumError', 'DatasetInfoError',
+            'DataFilesNotFoundError', 'EmptyDatasetError', 'ManualDownloadError',
+            'DatasetNotImplementedError', 'DatasetOnlineError', 'DatasetOfflineError',
+            'StreamingError', 'CorruptedFileError', 'SplitNotFoundError'
+        ]
+
+        for exc_name in exception_classes:
+            exc_class = type(exc_name, (Exception,), {})
+            setattr(exceptions_module, exc_name, exc_class)
+
+        datasets.exceptions = exceptions_module
+        sys.modules['datasets.exceptions'] = exceptions_module
+        print("🔧 [main] 已创建exceptions模块")
+
+    # 修复HubDatasetModuleFactoryWithParquetExport
+    from datasets import load
+    if not hasattr(load, 'HubDatasetModuleFactoryWithParquetExport'):
+        print("🔧 [main] HubDatasetModuleFactoryWithParquetExport不存在，开始修复...")
+        from datasets.load import HubDatasetModuleFactoryWithoutScript
+
+        class HubDatasetModuleFactoryWithParquetExport(HubDatasetModuleFactoryWithoutScript):
+            '''兼容类，模拟Parquet导出功能'''
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.supports_parquet_export = True
+
+        load.HubDatasetModuleFactoryWithParquetExport = HubDatasetModuleFactoryWithParquetExport
+        print("🔧 [main] 已创建HubDatasetModuleFactoryWithParquetExport兼容类")
+
+    # 修复_get_importable_file_path
+    if not hasattr(load, '_get_importable_file_path'):
+        print("🔧 [main] _get_importable_file_path不存在，开始修复...")
+
+        def _get_importable_file_path(dataset_name, filename, use_auth_token=None):
+            '''兼容函数，返回可导入的文件路径'''
+            return f'{dataset_name}/{filename}'
+
+        load._get_importable_file_path = _get_importable_file_path
+        print("🔧 [main] 已创建_get_importable_file_path兼容函数")
+
+    # 修复resolve_trust_remote_code
+    if not hasattr(load, 'resolve_trust_remote_code'):
+        print("🔧 [main] resolve_trust_remote_code不存在，开始修复...")
+
+        def resolve_trust_remote_code(trust_remote_code, repo_id=None):
+            '''兼容函数，返回trust_remote_code参数'''
+            return trust_remote_code
+
+        load.resolve_trust_remote_code = resolve_trust_remote_code
+        print("🔧 [main] 已创建resolve_trust_remote_code兼容函数")
+
     # 验证修复
     if hasattr(datasets, 'LargeList'):
         print("✅ [main] LargeList修复成功")
@@ -88,6 +148,11 @@ try:
         print("✅ [main] _FEATURE_TYPES修复成功")
     else:
         print("❌ [main] _FEATURE_TYPES修复失败")
+
+    if hasattr(datasets, 'exceptions'):
+        print("✅ [main] exceptions模块修复成功")
+    else:
+        print("❌ [main] exceptions模块修复失败")
 
 except Exception as e:
     print(f"🔧 [main] datasets修复失败: {e}")

@@ -81,6 +81,57 @@ try:
             features._FEATURE_TYPES = _FEATURE_TYPES
             print("🔧 [sitecustomize] 已预设_FEATURE_TYPES")
 
+        # 预设exceptions模块
+        if not hasattr(ds, 'exceptions'):
+            import types
+            exceptions_module = types.ModuleType('datasets.exceptions')
+
+            # 定义常用的异常类
+            exception_classes = [
+                'DatasetNotFoundError', 'DatasetBuildError', 'DatasetGenerationError',
+                'DatasetValidationError', 'NonMatchingChecksumError', 'DatasetInfoError',
+                'DataFilesNotFoundError', 'EmptyDatasetError', 'ManualDownloadError',
+                'DatasetNotImplementedError', 'DatasetOnlineError', 'DatasetOfflineError',
+                'StreamingError', 'CorruptedFileError', 'SplitNotFoundError'
+            ]
+
+            for exc_name in exception_classes:
+                exc_class = type(exc_name, (Exception,), {})
+                setattr(exceptions_module, exc_name, exc_class)
+
+            ds.exceptions = exceptions_module
+            sys.modules['datasets.exceptions'] = exceptions_module
+            print("🔧 [sitecustomize] 已预设exceptions模块")
+
+            # 预设HubDatasetModuleFactoryWithParquetExport
+            from datasets import load
+            if not hasattr(load, 'HubDatasetModuleFactoryWithParquetExport'):
+                from datasets.load import HubDatasetModuleFactoryWithoutScript
+
+                class HubDatasetModuleFactoryWithParquetExport(HubDatasetModuleFactoryWithoutScript):
+                    def __init__(self, *args, **kwargs):
+                        super().__init__(*args, **kwargs)
+                        self.supports_parquet_export = True
+
+                load.HubDatasetModuleFactoryWithParquetExport = HubDatasetModuleFactoryWithParquetExport
+                print("🔧 [sitecustomize] 已预设HubDatasetModuleFactoryWithParquetExport")
+
+                # 预设_get_importable_file_path
+                if not hasattr(load, '_get_importable_file_path'):
+                    def _get_importable_file_path(dataset_name, filename, use_auth_token=None):
+                        return f'{dataset_name}/{filename}'
+
+                    load._get_importable_file_path = _get_importable_file_path
+                    print("🔧 [sitecustomize] 已预设_get_importable_file_path")
+
+                    # 预设resolve_trust_remote_code
+                    if not hasattr(load, 'resolve_trust_remote_code'):
+                        def resolve_trust_remote_code(trust_remote_code, repo_id=None):
+                            return trust_remote_code
+
+                        load.resolve_trust_remote_code = resolve_trust_remote_code
+                        print("🔧 [sitecustomize] 已预设resolve_trust_remote_code")
+
 except Exception as e:
     print(f"🔧 [sitecustomize] datasets预修复失败: {e}")
 

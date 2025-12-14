@@ -43,6 +43,63 @@ def fix_datasets_import():
             features._FEATURE_TYPES = _FEATURE_TYPES
             print(f"🔧 [scripts] 已创建_FEATURE_TYPES ({len(_FEATURE_TYPES)}个类型)")
 
+        # 修复exceptions模块
+        if not hasattr(datasets, 'exceptions'):
+            print("🔧 [scripts] exceptions模块不存在，开始修复...")
+            import types
+            exceptions_module = types.ModuleType('datasets.exceptions')
+
+            exception_classes = [
+                'DatasetNotFoundError', 'DatasetBuildError', 'DatasetGenerationError',
+                'DatasetValidationError', 'NonMatchingChecksumError', 'DatasetInfoError',
+                'DataFilesNotFoundError', 'EmptyDatasetError', 'ManualDownloadError',
+                'DatasetNotImplementedError', 'DatasetOnlineError', 'DatasetOfflineError',
+                'StreamingError', 'CorruptedFileError', 'SplitNotFoundError'
+            ]
+
+            for exc_name in exception_classes:
+                exc_class = type(exc_name, (Exception,), {})
+                setattr(exceptions_module, exc_name, exc_class)
+
+            datasets.exceptions = exceptions_module
+            import sys
+            sys.modules['datasets.exceptions'] = exceptions_module
+            print("🔧 [scripts] 已创建exceptions模块")
+
+        # 修复HubDatasetModuleFactoryWithParquetExport
+        from datasets import load
+        if not hasattr(load, 'HubDatasetModuleFactoryWithParquetExport'):
+            print("🔧 [scripts] HubDatasetModuleFactoryWithParquetExport不存在，开始修复...")
+            from datasets.load import HubDatasetModuleFactoryWithoutScript
+
+            class HubDatasetModuleFactoryWithParquetExport(HubDatasetModuleFactoryWithoutScript):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.supports_parquet_export = True
+
+            load.HubDatasetModuleFactoryWithParquetExport = HubDatasetModuleFactoryWithParquetExport
+            print("🔧 [scripts] 已创建HubDatasetModuleFactoryWithParquetExport兼容类")
+
+        # 修复_get_importable_file_path
+        if not hasattr(load, '_get_importable_file_path'):
+            print("🔧 [scripts] _get_importable_file_path不存在，开始修复...")
+
+            def _get_importable_file_path(dataset_name, filename, use_auth_token=None):
+                return f'{dataset_name}/{filename}'
+
+            load._get_importable_file_path = _get_importable_file_path
+            print("🔧 [scripts] 已创建_get_importable_file_path兼容函数")
+
+        # 修复resolve_trust_remote_code
+        if not hasattr(load, 'resolve_trust_remote_code'):
+            print("🔧 [scripts] resolve_trust_remote_code不存在，开始修复...")
+
+            def resolve_trust_remote_code(trust_remote_code, repo_id=None):
+                return trust_remote_code
+
+            load.resolve_trust_remote_code = resolve_trust_remote_code
+            print("🔧 [scripts] 已创建resolve_trust_remote_code兼容函数")
+
     except ImportError:
         pass
 
