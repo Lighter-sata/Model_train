@@ -110,6 +110,21 @@ def get_training_args(output_dir: Optional[str] = None) -> TrainArguments:
         weight_decay=config['training']['weight_decay'],
         max_grad_norm=config['training']['max_grad_norm'],
         max_length=config['training']['max_length'],
+        gradient_checkpointing=config['training']['gradient_checkpointing'],
+        optim=config['training']['optim'],
+        dataloader_num_workers=config['training']['dataloader_num_workers'],
+        dataloader_pin_memory=config['training']['dataloader_pin_memory'],
+        # 显存优化设置
+        packing=True,
+        dataset_num_proc=1,  # 减少进程数节省显存
+        ddp_find_unused_parameters=False,
+        # 额外显存优化
+        use_flash_attn=True,  # 启用flash attention
+        model_kwargs={
+            "trust_remote_code": True,
+            "torch_dtype": "bfloat16",
+            "use_cache": False  # 训练时关闭KV cache节省显存
+        },
         save_steps=config['training']['save_steps'],
         eval_steps=config['training']['eval_steps'],
         logging_steps=config['training']['logging_steps'],
