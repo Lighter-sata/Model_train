@@ -136,19 +136,35 @@ def install_dependencies():
         print("\n🔧 尝试强制重新安装...")
         try:
             if platform_name == 'modelscope':
+                # 首先尝试datasets兼容性修复
+                print("  运行datasets兼容性修复...")
+                try:
+                    result = subprocess.run([sys.executable, 'fix_datasets_compatibility.py'],
+                                          capture_output=True, text=True, check=True, env=env)
+                    print("✅ datasets兼容性修复成功")
+                except subprocess.CalledProcessError:
+                    print("⚠️  datasets兼容性修复失败，继续其他方法...")
+
                 # 强制清理并重新安装
-                print("  强制清理datasets和pyarrow...")
+                print("  强制清理相关包...")
                 force_install_cmd = '''
 import subprocess
 import sys
 import os
 # 设置PYTHONPATH
 os.environ["PYTHONPATH"] = "site_packages:" + os.environ.get("PYTHONPATH", "")
-subprocess.run([sys.executable, "quick_pyarrow_fix.py"], check=True)
-subprocess.run(["pip", "uninstall", "-y", "datasets", "pyarrow"], check=True)
-subprocess.run(["pip", "install", "pyarrow>=8.0.0,<12.0.0"], check=True)
-subprocess.run(["pip", "install", "datasets==2.14.0"], check=True)
-print("强制重装完成")
+try:
+    subprocess.run([sys.executable, "quick_pyarrow_fix.py"], check=True)
+except:
+    print("pyarrow补丁失败，继续...")
+try:
+    subprocess.run(["pip", "uninstall", "-y", "datasets", "pyarrow", "modelscope"], check=True)
+    subprocess.run(["pip", "install", "pyarrow>=8.0.0,<15.0.0"], check=True)
+    subprocess.run(["pip", "install", "datasets>=2.10.0,<2.17.0"], check=True)
+    subprocess.run(["pip", "install", "modelscope>=1.30.0"], check=True)
+    print("强制重装完成")
+except Exception as e:
+    print(f"重装过程中出错: {e}")
 '''
                 subprocess.run([sys.executable, '-c', force_install_cmd], check=True, env=env)
 
@@ -161,9 +177,9 @@ print("强制重装完成")
         except subprocess.CalledProcessError as e2:
             print(f"❌ 强制重装也失败: {e2.stderr[:200]}")
             print("\n💡 最后的建议:")
-            print("1. 手动运行: PYTHONPATH=site_packages python -c \"import pyarrow as pa; pa.PyExtensionType = pa.ExtensionType if hasattr(pa, 'ExtensionType') else None\"")
-            print("2. 然后运行: pip install 'pyarrow>=8.0.0,<12.0.0' 'datasets==2.14.0'")
-            print("3. 最后运行: PYTHONPATH=site_packages python main.py --step all")
+            print("1. 手动运行: python fix_datasets_compatibility.py")
+            print("2. 然后运行: PYTHONPATH=site_packages python fix_pyarrow_manual.py")
+            print("3. 最后运行: python main.py --skip-env-check --step train")
             return False
 
 def run_setup_verification():

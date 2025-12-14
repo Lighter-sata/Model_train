@@ -269,6 +269,19 @@ cp results/enhanced_result.jsonl results/result.json
    python test_pyarrow_patch.py
    ```
 
+2. **Datasets兼容性错误** (`ImportError: cannot import name 'LargeList'`):
+   ```bash
+   # 一键修复datasets兼容性
+   python fix_datasets_compatibility.py
+
+   # 或手动修复
+   pip uninstall -y datasets
+   pip install 'datasets>=2.10.0,<2.17.0'
+
+   # 验证修复
+   python -c "from modelscope import MsDataset; print('成功')"
+   ```
+
 2. **数据集下载失败**：
    ```bash
    # 使用备用数据下载
